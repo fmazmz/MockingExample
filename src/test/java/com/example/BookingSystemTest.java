@@ -4,14 +4,19 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -44,6 +49,17 @@ class BookingSystemTest {
         when(mockRoom.isAvailable(start, end)).thenReturn(isAvailable);
     }
 
+    private static Stream<Arguments> nullParameterProvider() {
+        LocalDateTime start = LocalDateTime.of(2026, 1, 19, 13, 0);
+        LocalDateTime end = LocalDateTime.of(2026, 1, 19, 14, 0);
+
+        return Stream.of(
+                Arguments.of(null, start, end), // roomId null
+                Arguments.of("room-id", null, end), // startTime null
+                Arguments.of("room-id", start, null) // endTime null
+        );
+    }
+
 
     @Test
     @DisplayName("should return true if booking succeeded")
@@ -71,10 +87,20 @@ class BookingSystemTest {
     }
 
 
+    @DisplayName("should throw IllegalArgumentException when parameters are null")
+    @ParameterizedTest
+    @MethodSource("nullParameterProvider")
+    void test_bookRoom_null_parameters(String roomId, LocalDateTime start, LocalDateTime end) {
+        assertThatThrownBy(() -> bookingSystem.bookRoom(roomId, start, end))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Bokning kräver giltiga start- och sluttider samt rum-id");
+    }
+
+
     // TODO: bookRoom Test scenarios:
     // - DONE - Unavailable room
     // - A room that does not exist
-    // - Null parameters
+    // - DONE - Null parameters
     // - startTime before currentTime
     // - endTime before startTime
     // - failed sendBookingConfirmation should still book
