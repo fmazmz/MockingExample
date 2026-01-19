@@ -37,13 +37,18 @@ class BookingSystemTest {
         end = LocalDateTime.of(2026, 1, 19, 14, 0);
     }
 
-
-    @Test
-    @DisplayName("bookRoom should return true if booking succeeded")
-    void test_bookRoom_success() {
+    // Helper method to avoid duplicate setup of a mockRoom on each testcase
+    private void setUpMockRoom(boolean isAvailable) {
         when(timeProvider.getCurrentTime()).thenReturn(now);
         when(roomRepository.findById("room-id")).thenReturn(Optional.of(mockRoom));
-        when(mockRoom.isAvailable(start, end)).thenReturn(true);
+        when(mockRoom.isAvailable(start, end)).thenReturn(isAvailable);
+    }
+
+
+    @Test
+    @DisplayName("should return true if booking succeeded")
+    void test_bookRoom_success() {
+        setUpMockRoom(true);
 
         boolean result = bookingSystem.bookRoom("room-id", start, end);
 
@@ -52,9 +57,23 @@ class BookingSystemTest {
         verify(roomRepository).save(mockRoom);
     }
 
-    // TODO: Test:
-    // - Unavailable room
-    // - An room that does not exist
+
+    @Test
+    @DisplayName("should return false when the room is unavailable")
+    void test_bookRoom_unavailable_room() {
+        setUpMockRoom(false);
+
+        boolean result = bookingSystem.bookRoom("room-id", start, end);
+
+        assertThat(result).isFalse();
+        verify(mockRoom, never()).addBooking(any(Booking.class));
+        verify(roomRepository, never()).save(mockRoom);
+    }
+
+
+    // TODO: bookRoom Test scenarios:
+    // - DONE - Unavailable room
+    // - A room that does not exist
     // - Null parameters
     // - startTime before currentTime
     // - endTime before startTime
