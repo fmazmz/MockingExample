@@ -96,6 +96,19 @@ class BookingSystemTest {
                 .hasMessageContaining("Bokning kräver giltiga start- och sluttider samt rum-id");
     }
 
+    @DisplayName("should throw IllegalArgumentException if room does not exist")
+    @Test
+    void test_bookRoom_does_not_exist() {
+        String roomId = "non-existent-roomId";
+
+        when(timeProvider.getCurrentTime()).thenReturn(now);
+        when(roomRepository.findById(roomId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> bookingSystem.bookRoom(roomId, start, end))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Rummet existerar inte");
+    }
+
 
     // TODO: bookRoom Test scenarios:
     // - DONE - Unavailable room
