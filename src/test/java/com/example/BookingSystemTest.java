@@ -22,10 +22,14 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 @DisplayName("BookingSystem Tests")
 class BookingSystemTest {
-    @Mock private TimeProvider timeProvider;
-    @Mock private NotificationService notificationService;
-    @Mock private RoomRepository roomRepository;
-    @Mock private Room mockRoom;
+    @Mock
+    private TimeProvider timeProvider;
+    @Mock
+    private NotificationService notificationService;
+    @Mock
+    private RoomRepository roomRepository;
+    @Mock
+    private Room mockRoom;
 
     @InjectMocks
     private BookingSystem bookingSystem;
@@ -124,16 +128,31 @@ class BookingSystemTest {
     @DisplayName("throws exception when endTime is before startTime")
     @Test
     void endTimeBeforeStart() {
-        LocalDateTime invalidEndTime = START.minusHours(1);
+        LocalDateTime earlyEnd = START.minusHours(1);
 
         when(timeProvider.getCurrentTime()).thenReturn(NOW);
 
-        assertThatThrownBy(() -> bookingSystem.bookRoom(ROOM_ID, START, invalidEndTime))
+        assertThatThrownBy(() -> bookingSystem.bookRoom(ROOM_ID, START, earlyEnd))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Sluttid måste vara efter starttid");
 
     }
 
+
+    @Test
+    void succeedWithNotificationFailure() throws NotificationException {
+        setUpMockRoom(true, ROOM_ID);
+
+        doThrow(new NotificationException("Email service down"))
+                .when(notificationService).sendBookingConfirmation(any(Booking.class));
+
+        boolean result = bookingSystem.bookRoom(ROOM_ID, START, END);
+
+        assertThat(result).isTrue();
+
+        verify(mockRoom).addBooking(any(Booking.class));
+        verify(roomRepository).save(mockRoom);
+    }
 
     // TODO: bookRoom Test scenarios:
     // - DONE - Unavailable room
@@ -141,6 +160,11 @@ class BookingSystemTest {
     // - DONE - Null parameters
     // - DONE - startTime before currentTime
     // - DONE - endTime before startTime
-    // - failed sendBookingConfirmation should still book
+    // - DONE - failed sendBookingConfirmation should still book
 
+    //TODO: getAvailableRooms test scenarios:
+    // - Null bookningId
+    // - No room connected to the bookingId
+    // - booking.startTime is before current time should throw
+    // - failed sendCancellationConfirmation should still cancel
 }
