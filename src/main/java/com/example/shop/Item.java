@@ -5,12 +5,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Item {
-    private final String name;
+    private final String id;
     private final BigDecimal price;
     private final List<Discount> discounts = new ArrayList<>();
 
     public Item(String name, BigDecimal price) {
-        this.name = name;
+        this.id = name;
         this.price = price;
     }
 

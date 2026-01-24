@@ -1,5 +1,6 @@
 package com.example;
 
+import com.example.shop.CartPercentageDiscount;
 import com.example.shop.Item;
 import com.example.shop.ItemPercentageDiscount;
 import com.example.shop.ShoppingCart;
@@ -75,5 +76,28 @@ public class ShoppingCartTest {
 
         cart.addItem(item);
         assertThat(cart.getTotalPrice()).isEqualByComparingTo(BigDecimal.valueOf(225.0));
+    }
+
+    @DisplayName("applies discount on an item and a cart")
+    @Test
+    void applyDiscountOnItemAndCart() {
+        Item item1 = new Item("item1", BigDecimal.valueOf(100.0));
+        Item item2 = new Item("item2", BigDecimal.valueOf(100.0));
+
+        item1.addDiscount(new ItemPercentageDiscount(BigDecimal.valueOf(0.10)));
+
+        cart.addItem(item1);
+        cart.addItem(item2);
+
+        // Add a discount on the total cart price on top of the discounted item
+        cart.addDiscount(new CartPercentageDiscount(BigDecimal.valueOf(0.10)));
+
+        // Verify standalone item 1 is discounted with 10%
+        assertThat(item1.getPrice()).isEqualByComparingTo(BigDecimal.valueOf(90.0));
+        // Verify standalone item 2 is NOT discounted and has original price
+        assertThat(item2.getPrice()).isEqualByComparingTo(BigDecimal.valueOf(100.0));
+
+        // Verify cart discount has been applied on its total price
+        assertThat(cart.getTotalPrice()).isEqualByComparingTo(BigDecimal.valueOf(171.0));
     }
 }
