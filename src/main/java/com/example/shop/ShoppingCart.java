@@ -2,6 +2,7 @@ package com.example.shop;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ShoppingCart {
@@ -11,9 +12,8 @@ public class ShoppingCart {
     public ShoppingCart() {
     }
 
-    public boolean addItem(Item item) {
+    public void addItem(Item item) {
         items.add(item);
-        return true;
     }
 
     public void removeItem(Item item) {
@@ -21,7 +21,7 @@ public class ShoppingCart {
     }
 
     public List<Item> getItems() {
-        return items;
+        return Collections.unmodifiableList(items);
     }
 
     public BigDecimal getTotalPrice() {

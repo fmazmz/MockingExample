@@ -26,8 +26,8 @@ public class ShoppingCartTest {
     @Test
     void addItemToCart() {
         Item item = new Item("name", BigDecimal.valueOf(250.0), 1);
-        boolean result = cart.addItem(item);
-        assertThat(result).isTrue();
+        cart.addItem(item);
+        assertThat(cart.getItems()).hasSize(1);
     }
 
     @DisplayName("stores added item in the cart")

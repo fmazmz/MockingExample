@@ -27,7 +27,8 @@ public class Item {
     public void addDiscount(Discount discount) {
         discounts.add(discount);
     }
-    public void setQuantity(int quantity) {
+
+    private void setQuantity(int quantity) {
         if (quantity < 1) throw new IllegalArgumentException("Quantity must be at least 1");
         this.quantity = quantity;
     }
@@ -43,6 +44,7 @@ public class Item {
 
     public void decreaseQuantity(int amount) {
         if (amount < 1) throw new IllegalArgumentException("Amount must be positive");
+        if (quantity - amount < 1) throw new IllegalArgumentException("Quantity cannot go below 1");
         this.quantity -= amount;
     }
 }
