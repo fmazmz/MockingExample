@@ -3,25 +3,29 @@ package com.example.payment;
 import java.math.BigDecimal;
 
 public class PaymentProcessor {
-    private final String apiKey;
+    private final PaymentConfig paymentConfig;
     private final PaymentRepository paymentRepository;
     private final PaymentApi paymentApi;
     private final EmailService emailService;
 
     public PaymentProcessor(
-            String apiKey,
+            PaymentConfig paymentConfig,
             PaymentRepository paymentRepository,
             PaymentApi paymentApi,
             EmailService emailService) {
-        this.apiKey = apiKey;
+        this.paymentConfig = paymentConfig;
         this.paymentRepository = paymentRepository;
         this.paymentApi = paymentApi;
         this.emailService = emailService;
     }
 
     public boolean processPayment(String email, BigDecimal amount) throws PaymentException {
+        if (email == null || amount == null) {
+            throw new IllegalArgumentException("Email and amount cannot be null");
+        }
+
         // Anropar extern betaltjänst
-        PaymentApiResponse response = paymentApi.charge(apiKey, amount);
+        PaymentApiResponse response = paymentApi.charge(paymentConfig.getApiKey(), amount);
 
         // save both failed and successful payments for audit
         if (!response.success()) {

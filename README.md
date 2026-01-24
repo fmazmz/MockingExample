@@ -45,3 +45,6 @@ From a testing standpoint:
 removing the static API key improves testability by eliminating hidden state and hardcoded values. 
 Instead of relying on a fixed key, tests can supply a test-specific API key via constructor injection or configuration. 
 This allows unit tests to focus on verifying behavior rather than being tied to a specific credential, and it makes mocking the PaymentApi simpler and more explicit.
+
+In a production application, configuration often contains multiple values (API keys, timeouts, retry policies, etc.). 
+Using a `PaymentConfig` interface creates a natural place to add additional configuration parameters in the future without changing the `PaymentProcessor` constructor signature repeatedly.
