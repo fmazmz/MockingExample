@@ -1,18 +1,16 @@
 package com.example;
 
 import com.example.shop.Item;
+import com.example.shop.ItemPercentageDiscount;
 import com.example.shop.ShoppingCart;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
 
 public class ShoppingCartTest {
 
@@ -67,5 +65,15 @@ public class ShoppingCartTest {
         BigDecimal actualTotalPrice = cart.getTotalPrice();
 
         assertThat(actualTotalPrice).isEqualByComparingTo(BigDecimal.valueOf(300));
+    }
+
+    @DisplayName("applies discount on an item")
+    @Test
+    void applyDiscountOnStandaloneItem() {
+        Item item = new Item("item", BigDecimal.valueOf(300.0));
+        item.addDiscount(new ItemPercentageDiscount(BigDecimal.valueOf(0.25)));
+
+        cart.addItem(item);
+        assertThat(cart.getTotalPrice()).isEqualByComparingTo(BigDecimal.valueOf(225.0));
     }
 }
