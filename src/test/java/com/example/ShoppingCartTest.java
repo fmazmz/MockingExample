@@ -41,4 +41,19 @@ public class ShoppingCartTest {
 
         assertThat(cartItems).containsExactly(item);
     }
+
+    @DisplayName("removes item from the cart")
+    @Test
+    void removeItemFromCart() {
+        Item item = new Item("item1", BigDecimal.valueOf(100.0));
+        cart.addItem(item);
+
+        // Confirm item is stored in the cart
+        assertThat(cart.getItems()).containsExactly(item);
+
+        cart.removeItem(item);
+
+        // Confirm item has been removed from the cart
+        assertThat(cart.getItems()).isEmpty();
+    }
 }
