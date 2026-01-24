@@ -1,23 +1,35 @@
 package com.example.payment;
 
-//public class PaymentProcessor {
-//    private static final String API_KEY = "sk_test_123456";
-//
-//    public boolean processPayment(double amount) {
-//        // Anropar extern betaltjänst direkt med statisk API-nyckel
-//        PaymentApiResponse response = PaymentApi.charge(API_KEY, amount);
-//
-//        // Skriver till databas direkt
-//        if (response.isSuccess()) {
-//            DatabaseConnection.getInstance()
-//                    .executeUpdate("INSERT INTO payments (amount, status) VALUES (" + amount + ", 'SUCCESS')");
-//        }
-//
-//        // Skickar e-post direkt
-//        if (response.isSuccess()) {
-//            EmailService.sendPaymentConfirmation("user@example.com", amount);
-//        }
-//
-//        return response.isSuccess();
-//    }
-//}
+public class PaymentProcessor {
+    private final String apiKey;
+    private final PaymentRepository paymentRepository;
+    private final PaymentApi paymentApi;
+    private final EmailService emailService;
+
+    public PaymentProcessor(
+            String apiKey,
+            PaymentRepository paymentRepository,
+            PaymentApi paymentApi,
+            EmailService emailService) {
+        this.apiKey = apiKey;
+        this.paymentRepository = paymentRepository;
+        this.paymentApi = paymentApi;
+        this.emailService = emailService;
+    }
+
+    public boolean processPayment(String email, double amount) throws PaymentException {
+        // Anropar extern betaltjänst
+        PaymentApiResponse response = paymentApi.charge(apiKey, amount);
+
+        // save both failed and successful payments for audit
+        if (!response.success()) {
+            paymentRepository.save(amount, PaymentStatus.FAILED.name());
+            throw new PaymentException("Payment failed with amount: " + amount);
+        }
+
+        paymentRepository.save(amount, PaymentStatus.SUCCESS.name());
+        emailService.sendPaymentConfirmation(email, amount);
+
+        return true;
+    }
+}
