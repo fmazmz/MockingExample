@@ -3,6 +3,7 @@ package com.example;
 import com.example.payment.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -14,8 +15,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.util.stream.Stream;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class PaymentProcessorTest {
@@ -48,5 +50,20 @@ public class PaymentProcessorTest {
         assertThatThrownBy(() -> paymentProcessor.processPayment(email, amount))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Email and amount cannot be null");
+    }
+
+    @DisplayName("successfully processes payment and saves the payment to the database")
+    @Test
+    void successfulPayment() throws PaymentException, NotificationException {
+        PaymentApiResponse response = new PaymentApiResponse(true);
+
+        when(paymentConfig.getApiKey()).thenReturn(API_KEY);
+        when(paymentApi.charge(API_KEY, AMOUNT)).thenReturn(response);
+
+        boolean result = paymentProcessor.processPayment(EMAIL, AMOUNT);
+
+        assertThat(result).isTrue();
+        verify(paymentRepository).save(AMOUNT, PaymentStatus.SUCCESS.name());
+        verify(emailService).sendPaymentConfirmation(EMAIL, AMOUNT);
     }
 }

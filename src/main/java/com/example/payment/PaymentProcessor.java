@@ -1,5 +1,7 @@
 package com.example.payment;
 
+import com.example.NotificationException;
+
 import java.math.BigDecimal;
 
 public class PaymentProcessor {
@@ -34,7 +36,12 @@ public class PaymentProcessor {
         }
 
         paymentRepository.save(amount, PaymentStatus.SUCCESS.name());
-        emailService.sendPaymentConfirmation(email, amount);
+
+        try {
+            emailService.sendPaymentConfirmation(email, amount);
+        } catch (NotificationException e) {
+            // Continue if confirmation fails
+        }
 
         return true;
     }
