@@ -1,5 +1,6 @@
 package com.example.shop;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,5 +21,11 @@ public class ShoppingCart {
 
     public List<Item> getItems() {
         return items;
+    }
+
+    public BigDecimal getTotalPrice() {
+        return items.stream()
+                .map(Item::getPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }

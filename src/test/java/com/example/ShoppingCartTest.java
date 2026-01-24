@@ -56,4 +56,16 @@ public class ShoppingCartTest {
         // Confirm item has been removed from the cart
         assertThat(cart.getItems()).isEmpty();
     }
+
+    @DisplayName("calculates total sum of cart items")
+    @Test
+    void calculatesPriceOfCartItems() {
+        cart.addItem(new Item("item1", BigDecimal.valueOf(100.0)));
+        cart.addItem(new Item("item2", BigDecimal.valueOf(100.0)));
+        cart.addItem(new Item("item3", BigDecimal.valueOf(100.0)));
+
+        BigDecimal actualTotalPrice = cart.getTotalPrice();
+
+        assertThat(actualTotalPrice).isEqualByComparingTo(BigDecimal.valueOf(300));
+    }
 }
