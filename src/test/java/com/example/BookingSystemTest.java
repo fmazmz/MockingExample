@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +20,8 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -103,7 +106,7 @@ class BookingSystemTest {
 
     @DisplayName("throws exception when room does not exist")
     @Test
-    void nonExistantRoom() {
+    void nonExistentRoom() {
         when(timeProvider.getCurrentTime()).thenReturn(now);
         when(roomRepository.findById(roomId)).thenReturn(Optional.empty());
 
@@ -115,11 +118,11 @@ class BookingSystemTest {
     @DisplayName("throws exception when startTime is in the past")
     @Test
     void startTimeInPast() {
-        LocalDateTime paststart = now.minusHours(3);
+        LocalDateTime pastStart = now.minusHours(3);
 
         when(timeProvider.getCurrentTime()).thenReturn(now);
 
-        assertThatThrownBy(() -> bookingSystem.bookRoom(roomId, paststart, end))
+        assertThatThrownBy(() -> bookingSystem.bookRoom(roomId, pastStart, end))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Kan inte boka tid i dåtid");
     }
@@ -127,7 +130,7 @@ class BookingSystemTest {
 
     @DisplayName("throws exception when endTime is before startTime")
     @Test
-    void endTimeBeforestart() {
+    void endTimeBeforeStart() {
         LocalDateTime earlyEnd = start.minusHours(1);
 
         when(timeProvider.getCurrentTime()).thenReturn(now);
@@ -220,4 +223,42 @@ class BookingSystemTest {
         verify(roomRepository).save(mockRoom);
     }
 
+
+    @DisplayName("returns available rooms for given time period")
+    @Test
+    void returnsAvailableRooms() {
+        List<Room> mockRooms = Arrays.asList(
+                new Room("room-1", "Room 1"),
+                new Room("room-2", "Room 2"),
+                new Room("room-3", "Room 3")
+        );
+
+        when(roomRepository.findAll()).thenReturn(mockRooms);
+
+        List<Room> result = bookingSystem.getAvailableRooms(start, end);
+
+        assertNotNull(result);
+        assertThat(result.size()).isEqualTo(3);
+
+        verify(roomRepository).findAll();
+    }
+
+
+    @DisplayName("throws exception if any parameter is null")
+    @Test
+    void nullStartAndEndTime() {
+        assertThatThrownBy(() -> bookingSystem.getAvailableRooms(null, null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Måste ange både start- och sluttid");
+    }
+
+    @DisplayName("throws exception if endTime is before startTime")
+    @Test
+    void endTimeBeforeStartTime() {
+        LocalDateTime earlyEnd = start.minusHours(1);
+
+        assertThatThrownBy(() -> bookingSystem.getAvailableRooms(start, earlyEnd))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Sluttid måste vara efter starttid");
+    }
 }

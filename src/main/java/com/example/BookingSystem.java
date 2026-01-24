@@ -50,19 +50,19 @@ public class BookingSystem {
         return true;
     }
 
-    public List<Room> getAvailableRooms(LocalDateTime startTime, LocalDateTime endTime) {
-        if (startTime == null || endTime == null) {
-            throw new IllegalArgumentException("Måste ange både start- och sluttid");
-        }
+        public List<Room> getAvailableRooms(LocalDateTime startTime, LocalDateTime endTime) {
+            if (startTime == null || endTime == null) {
+                throw new IllegalArgumentException("Måste ange både start- och sluttid");
+            }
 
-        if (endTime.isBefore(startTime)) {
-            throw new IllegalArgumentException("Sluttid måste vara efter starttid");
-        }
+            if (endTime.isBefore(startTime)) {
+                throw new IllegalArgumentException("Sluttid måste vara efter starttid");
+            }
 
-        return roomRepository.findAll().stream()
-                .filter(room -> room.isAvailable(startTime, endTime))
-                .collect(Collectors.toList());
-    }
+            return roomRepository.findAll().stream()
+                    .filter(room -> room.isAvailable(startTime, endTime))
+                    .collect(Collectors.toList());
+        }
 
     public boolean cancelBooking(String bookingId) {
         if (bookingId == null) {
