@@ -34,10 +34,6 @@ public class PaymentProcessorTest {
     private static final String EMAIL = "customer@email.com";
     private static final BigDecimal AMOUNT = BigDecimal.valueOf(200.0);
 
-    @BeforeEach
-    void setUp() {
-        when(paymentConfig.getApiKey()).thenReturn(API_KEY);
-    }
 
 
     private static Stream<Arguments> nullParameterProvider() {
@@ -62,6 +58,7 @@ public class PaymentProcessorTest {
     void successfulPayment() throws PaymentException, NotificationException {
         PaymentApiResponse response = new PaymentApiResponse(true);
 
+        when(paymentConfig.getApiKey()).thenReturn(API_KEY);
         when(paymentApi.charge(API_KEY, AMOUNT)).thenReturn(response);
 
         boolean result = paymentProcessor.processPayment(EMAIL, AMOUNT);
@@ -76,6 +73,7 @@ public class PaymentProcessorTest {
     void unsuccessfulPayment() throws NotificationException {
         PaymentApiResponse response = new PaymentApiResponse(false);
 
+        when(paymentConfig.getApiKey()).thenReturn(API_KEY);
         when(paymentApi.charge(API_KEY, AMOUNT)).thenReturn(response);
 
         assertThatThrownBy(() -> paymentProcessor.processPayment(EMAIL, AMOUNT))
@@ -93,6 +91,7 @@ public class PaymentProcessorTest {
     void failedEmailConfirmation() throws PaymentException, NotificationException {
         PaymentApiResponse response = new PaymentApiResponse(true);
 
+        when(paymentConfig.getApiKey()).thenReturn(API_KEY);
         when(paymentApi.charge(API_KEY, AMOUNT)).thenReturn(response);
 
         // Mock a failure to send email confirmation
