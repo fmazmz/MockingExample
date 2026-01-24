@@ -25,7 +25,7 @@ public class ShoppingCartTest {
     @DisplayName("adds an item to the cart")
     @Test
     void addItemToCart() {
-        Item item = new Item("name", BigDecimal.valueOf(250.0));
+        Item item = new Item("name", BigDecimal.valueOf(250.0), 1);
         boolean result = cart.addItem(item);
         assertThat(result).isTrue();
     }
@@ -33,7 +33,7 @@ public class ShoppingCartTest {
     @DisplayName("stores added item in the cart")
     @Test
     void cartContainsItem() {
-        Item item = new Item("name", BigDecimal.valueOf(250.0));
+        Item item = new Item("name", BigDecimal.valueOf(250.0), 1);
         cart.addItem(item);
 
         List<Item> cartItems = cart.getItems();
@@ -44,7 +44,7 @@ public class ShoppingCartTest {
     @DisplayName("removes item from the cart")
     @Test
     void removeItemFromCart() {
-        Item item = new Item("item1", BigDecimal.valueOf(100.0));
+        Item item = new Item("item1", BigDecimal.valueOf(100.0), 1);
         cart.addItem(item);
 
         // Confirm item is stored in the cart
@@ -59,9 +59,9 @@ public class ShoppingCartTest {
     @DisplayName("calculates total sum of cart items")
     @Test
     void calculatesPriceOfCartItems() {
-        cart.addItem(new Item("item1", BigDecimal.valueOf(100.0)));
-        cart.addItem(new Item("item2", BigDecimal.valueOf(100.0)));
-        cart.addItem(new Item("item3", BigDecimal.valueOf(100.0)));
+        cart.addItem(new Item("item1", BigDecimal.valueOf(100.0), 1));
+        cart.addItem(new Item("item2", BigDecimal.valueOf(100.0), 1));
+        cart.addItem(new Item("item3", BigDecimal.valueOf(100.0), 1));
 
         BigDecimal actualTotalPrice = cart.getTotalPrice();
 
@@ -71,7 +71,7 @@ public class ShoppingCartTest {
     @DisplayName("applies discount on an item")
     @Test
     void applyDiscountOnStandaloneItem() {
-        Item item = new Item("item", BigDecimal.valueOf(300.0));
+        Item item = new Item("item", BigDecimal.valueOf(300.0), 1);
         item.addDiscount(new ItemPercentageDiscount(BigDecimal.valueOf(0.25)));
 
         cart.addItem(item);
@@ -81,8 +81,8 @@ public class ShoppingCartTest {
     @DisplayName("applies discount on an item and a cart")
     @Test
     void applyDiscountOnItemAndCart() {
-        Item item1 = new Item("item1", BigDecimal.valueOf(100.0));
-        Item item2 = new Item("item2", BigDecimal.valueOf(100.0));
+        Item item1 = new Item("item1", BigDecimal.valueOf(100.0), 1);
+        Item item2 = new Item("item2", BigDecimal.valueOf(100.0), 1);
 
         item1.addDiscount(new ItemPercentageDiscount(BigDecimal.valueOf(0.10)));
 
@@ -99,5 +99,15 @@ public class ShoppingCartTest {
 
         // Verify cart discount has been applied on its total price
         assertThat(cart.getTotalPrice()).isEqualByComparingTo(BigDecimal.valueOf(171.0));
+    }
+
+    @DisplayName("add multiple quantities of an item")
+    @Test
+    void addMultipleOfSameItem() {
+        Item item = new Item("item", BigDecimal.valueOf(100.0), 3);
+        cart.addItem(item);
+
+        assertThat(cart.getItems()).hasSize(1);
+        assertThat(cart.getItems().getFirst().getQuantity()).isEqualTo(3);
     }
 }

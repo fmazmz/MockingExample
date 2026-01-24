@@ -7,11 +7,13 @@ import java.util.List;
 public class Item {
     private final String id;
     private final BigDecimal price;
+    private int quantity;
     private final List<Discount> discounts = new ArrayList<>();
 
-    public Item(String name, BigDecimal price) {
-        this.id = name;
+    public Item(String id, BigDecimal price, int quantity) {
+        this.id = id;
         this.price = price;
+        this.quantity = quantity;
     }
 
     public BigDecimal getPrice() {
@@ -24,5 +26,19 @@ public class Item {
 
     public void addDiscount(Discount discount) {
         discounts.add(discount);
+    }
+
+    public void increaseQuantity(int amount) {
+        if (amount < 1) throw new IllegalArgumentException("Amount must be positive");
+        this.quantity += amount;
+    }
+
+    public void setQuantity(int quantity) {
+        if (quantity < 1) throw new IllegalArgumentException("Quantity must be at least 1");
+        this.quantity = quantity;
+    }
+
+    public int getQuantity() {
+        return this.quantity;
     }
 }
