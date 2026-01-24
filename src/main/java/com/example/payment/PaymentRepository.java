@@ -1,6 +1,8 @@
 package com.example.payment;
 
 
+import java.math.BigDecimal;
+
 public interface PaymentRepository {
-    void save(double amount, String status);
+    void save(BigDecimal amount, String status);
 }

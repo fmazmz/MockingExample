@@ -1,5 +1,7 @@
 package com.example.payment;
 
+import java.math.BigDecimal;
+
 public class PaymentProcessor {
     private final String apiKey;
     private final PaymentRepository paymentRepository;
@@ -17,7 +19,7 @@ public class PaymentProcessor {
         this.emailService = emailService;
     }
 
-    public boolean processPayment(String email, double amount) throws PaymentException {
+    public boolean processPayment(String email, BigDecimal amount) throws PaymentException {
         // Anropar extern betaltjänst
         PaymentApiResponse response = paymentApi.charge(apiKey, amount);
 
