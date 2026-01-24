@@ -13,7 +13,7 @@ public class Item {
     public Item(String id, BigDecimal price, int quantity) {
         this.id = id;
         this.price = price;
-        this.quantity = quantity;
+        setQuantity(quantity);
     }
 
     public BigDecimal getPrice() {
@@ -27,12 +27,6 @@ public class Item {
     public void addDiscount(Discount discount) {
         discounts.add(discount);
     }
-
-    public void increaseQuantity(int amount) {
-        if (amount < 1) throw new IllegalArgumentException("Amount must be positive");
-        this.quantity += amount;
-    }
-
     public void setQuantity(int quantity) {
         if (quantity < 1) throw new IllegalArgumentException("Quantity must be at least 1");
         this.quantity = quantity;
@@ -40,5 +34,15 @@ public class Item {
 
     public int getQuantity() {
         return this.quantity;
+    }
+
+    public void increaseQuantity(int amount) {
+        if (amount < 1) throw new IllegalArgumentException("Amount must be positive");
+        this.quantity += amount;
+    }
+
+    public void decreaseQuantity(int amount) {
+        if (amount < 1) throw new IllegalArgumentException("Amount must be positive");
+        this.quantity -= amount;
     }
 }

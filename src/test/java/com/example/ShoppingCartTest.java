@@ -109,5 +109,23 @@ public class ShoppingCartTest {
 
         assertThat(cart.getItems()).hasSize(1);
         assertThat(cart.getItems().getFirst().getQuantity()).isEqualTo(3);
+
+        // add another 2 of the same item
+        item.increaseQuantity(2);
+
+        assertThat(cart.getItems()).hasSize(1);
+        assertThat(cart.getItems().getFirst().getQuantity()).isEqualTo(5);
+    }
+
+    @DisplayName("decrease quantity of an item")
+    @Test
+    void decreaseItemQuantity() {
+        Item item = new Item("item", BigDecimal.valueOf(100.0), 3);
+        cart.addItem(item);
+
+        item.decreaseQuantity(1);
+
+        assertThat(cart.getItems()).hasSize(1);
+        assertThat(cart.getItems().getFirst().getQuantity()).isEqualTo(2);
     }
 }
