@@ -34,6 +34,11 @@ public class PaymentProcessorTest {
     private static final String EMAIL = "customer@email.com";
     private static final BigDecimal AMOUNT = BigDecimal.valueOf(200.0);
 
+    @BeforeEach
+    void setUp() {
+        when(paymentConfig.getApiKey()).thenReturn(API_KEY);
+    }
+
 
     private static Stream<Arguments> nullParameterProvider() {
         return Stream.of(
@@ -57,13 +62,48 @@ public class PaymentProcessorTest {
     void successfulPayment() throws PaymentException, NotificationException {
         PaymentApiResponse response = new PaymentApiResponse(true);
 
-        when(paymentConfig.getApiKey()).thenReturn(API_KEY);
         when(paymentApi.charge(API_KEY, AMOUNT)).thenReturn(response);
 
         boolean result = paymentProcessor.processPayment(EMAIL, AMOUNT);
 
         assertThat(result).isTrue();
         verify(paymentRepository).save(AMOUNT, PaymentStatus.SUCCESS.name());
+        verify(emailService).sendPaymentConfirmation(EMAIL, AMOUNT);
+    }
+
+    @DisplayName("throws exception when charge fails and saves failed payment to database")
+    @Test
+    void unsuccessfulPayment() throws NotificationException {
+        PaymentApiResponse response = new PaymentApiResponse(false);
+
+        when(paymentApi.charge(API_KEY, AMOUNT)).thenReturn(response);
+
+        assertThatThrownBy(() -> paymentProcessor.processPayment(EMAIL, AMOUNT))
+                .isInstanceOf(PaymentException.class)
+                .hasMessageContaining("Payment failed with amount: " + AMOUNT);
+
+        // Failed payment should still be saved to DB
+        verify(paymentRepository).save(AMOUNT, PaymentStatus.FAILED.name());
+        // No confirmation email should be sent on failed payment
+        verify(emailService, never()).sendPaymentConfirmation(EMAIL, AMOUNT);
+    }
+
+    @DisplayName("failed email confirmation should still return successful payment and save to database")
+    @Test
+    void failedEmailConfirmation() throws PaymentException, NotificationException {
+        PaymentApiResponse response = new PaymentApiResponse(true);
+
+        when(paymentApi.charge(API_KEY, AMOUNT)).thenReturn(response);
+
+        // Mock a failure to send email confirmation
+        doThrow(new NotificationException("Email service failure"))
+                .when(emailService).sendPaymentConfirmation(EMAIL, AMOUNT);
+
+        boolean result = paymentProcessor.processPayment(EMAIL, AMOUNT);
+
+        assertThat(result).isTrue();
+        verify(paymentRepository).save(AMOUNT, PaymentStatus.SUCCESS.name());
+        // Still verify that paymentProcessor tried to send the email
         verify(emailService).sendPaymentConfirmation(EMAIL, AMOUNT);
     }
 }
