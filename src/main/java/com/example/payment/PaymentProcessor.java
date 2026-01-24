@@ -1,23 +1,48 @@
 package com.example.payment;
 
-//public class PaymentProcessor {
-//    private static final String API_KEY = "sk_test_123456";
-//
-//    public boolean processPayment(double amount) {
-//        // Anropar extern betaltjänst direkt med statisk API-nyckel
-//        PaymentApiResponse response = PaymentApi.charge(API_KEY, amount);
-//
-//        // Skriver till databas direkt
-//        if (response.isSuccess()) {
-//            DatabaseConnection.getInstance()
-//                    .executeUpdate("INSERT INTO payments (amount, status) VALUES (" + amount + ", 'SUCCESS')");
-//        }
-//
-//        // Skickar e-post direkt
-//        if (response.isSuccess()) {
-//            EmailService.sendPaymentConfirmation("user@example.com", amount);
-//        }
-//
-//        return response.isSuccess();
-//    }
-//}
+import com.example.NotificationException;
+
+import java.math.BigDecimal;
+
+public class PaymentProcessor {
+    private final PaymentConfig paymentConfig;
+    private final PaymentRepository paymentRepository;
+    private final PaymentApi paymentApi;
+    private final EmailService emailService;
+
+    public PaymentProcessor(
+            PaymentConfig paymentConfig,
+            PaymentRepository paymentRepository,
+            PaymentApi paymentApi,
+            EmailService emailService) {
+        this.paymentConfig = paymentConfig;
+        this.paymentRepository = paymentRepository;
+        this.paymentApi = paymentApi;
+        this.emailService = emailService;
+    }
+
+    public boolean processPayment(String email, BigDecimal amount) throws PaymentException {
+        if (email == null || amount == null) {
+            throw new IllegalArgumentException("Email and amount cannot be null");
+        }
+
+        // Anropar extern betaltjänst
+        PaymentApiResponse response = paymentApi.charge(paymentConfig.getApiKey(), amount);
+
+        // save both failed and successful payments for audit
+        if (!response.success()) {
+            paymentRepository.save(amount, PaymentStatus.FAILED.name());
+            throw new PaymentException("Payment failed with amount: " + amount);
+        }
+
+        paymentRepository.save(amount, PaymentStatus.SUCCESS.name());
+
+        try {
+            emailService.sendPaymentConfirmation(email, amount);
+        } catch (NotificationException e) {
+            // Continue if confirmation fails
+        }
+
+        return true;
+    }
+}
