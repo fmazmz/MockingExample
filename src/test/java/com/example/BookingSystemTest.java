@@ -35,36 +35,35 @@ class BookingSystemTest {
     @InjectMocks
     private BookingSystem bookingSystem;
 
-    private String bookingId;
-    private String roomId;
-    private LocalDateTime now;
-    private LocalDateTime start;
-    private LocalDateTime end;
+    private static final LocalDateTime NOW = LocalDateTime.of(2026, 1, 19, 10, 0);
+    private static final LocalDateTime START = LocalDateTime.of(2026, 1, 19, 13, 0);
+    private static final LocalDateTime END = LocalDateTime.of(2026, 1, 19, 14, 0);
+    private static final String ROOM_ID = "default-room-id";
+    private static final String BOOKING_ID = "default-booking-id";
 
-    @BeforeEach
-    void mockData() {
-        now = LocalDateTime.of(2026, 1, 19, 10, 0);
-        start = LocalDateTime.of(2026, 1, 19, 13, 0);
-        end = LocalDateTime.of(2026, 1, 19, 14, 0);
-        roomId = "default-room-id";
-        bookingId = "default-booking-id";
-    }
 
     // Helper method to avoid duplicate setup of a mockRoom on each testcase
-    private void setUpMockRoom(boolean isAvailable, String roomId) {
-        when(timeProvider.getCurrentTime()).thenReturn(now);
-        when(roomRepository.findById(roomId)).thenReturn(Optional.of(mockRoom));
-        when(mockRoom.isAvailable(start, end)).thenReturn(isAvailable);
+    // Returns a mockedRoom that is either available or notAvailable depending on input
+    private void setUpMockRoomAvailability(boolean isAvailable) {
+        when(timeProvider.getCurrentTime()).thenReturn(NOW);
+        when(roomRepository.findById(ROOM_ID)).thenReturn(Optional.of(mockRoom));
+        when(mockRoom.isAvailable(START, END)).thenReturn(isAvailable);
     }
 
-    private static Stream<Arguments> nullParameterProvider() {
-        LocalDateTime start = LocalDateTime.of(2026, 1, 19, 13, 0);
-        LocalDateTime end = LocalDateTime.of(2026, 1, 19, 14, 0);
-
+    private static Stream<Arguments> nullParameterProvider_bookRoom() {
         return Stream.of(
-                Arguments.of(null, start, end), // roomId null
-                Arguments.of("room-id", null, end), // startTime null
-                Arguments.of("room-id", start, null) // endTime null
+                Arguments.of(null, START, END), // roomId null
+                Arguments.of(ROOM_ID, null, END), // startTime null
+                Arguments.of(ROOM_ID, START, null), // endTime null
+                Arguments.of(null, null, null)
+        );
+    }
+
+    private static Stream<Arguments> nullParameterProvider_getAvailableRooms() {
+        return Stream.of(
+                Arguments.of(null, END), // startTime null
+                Arguments.of(START, null), // endTime null
+                Arguments.of(null, null)
         );
     }
 
@@ -72,9 +71,9 @@ class BookingSystemTest {
     @Test
     @DisplayName("should return true when room is available")
     void success() {
-        setUpMockRoom(true, roomId);
+        setUpMockRoomAvailability(true);
 
-        boolean result = bookingSystem.bookRoom(roomId, start, end);
+        boolean result = bookingSystem.bookRoom(ROOM_ID, START, END);
 
         assertThat(result).isTrue();
         verify(mockRoom).addBooking(any(Booking.class));
@@ -85,9 +84,9 @@ class BookingSystemTest {
     @Test
     @DisplayName("should return false when room is unavailable")
     void unavailableRoom() {
-        setUpMockRoom(false, roomId);
+        setUpMockRoomAvailability(false);
 
-        boolean result = bookingSystem.bookRoom(roomId, start, end);
+        boolean result = bookingSystem.bookRoom(ROOM_ID, START, END);
 
         assertThat(result).isFalse();
         verify(mockRoom, never()).addBooking(any(Booking.class));
@@ -97,8 +96,8 @@ class BookingSystemTest {
 
     @DisplayName("throws exception for null parameters")
     @ParameterizedTest
-    @MethodSource("nullParameterProvider")
-    void nullParameters(String roomId, LocalDateTime start, LocalDateTime end) {
+    @MethodSource("nullParameterProvider_bookRoom")
+    void nullParameters_bookRoom(String roomId, LocalDateTime start, LocalDateTime end) {
         assertThatThrownBy(() -> bookingSystem.bookRoom(roomId, start, end))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Bokning kräver giltiga start- och sluttider samt rum-id");
@@ -107,10 +106,10 @@ class BookingSystemTest {
     @DisplayName("throws exception when room does not exist")
     @Test
     void nonExistentRoom() {
-        when(timeProvider.getCurrentTime()).thenReturn(now);
-        when(roomRepository.findById(roomId)).thenReturn(Optional.empty());
+        when(timeProvider.getCurrentTime()).thenReturn(NOW);
+        when(roomRepository.findById(ROOM_ID)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> bookingSystem.bookRoom(roomId, start, end))
+        assertThatThrownBy(() -> bookingSystem.bookRoom(ROOM_ID, START, END))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Rummet existerar inte");
     }
@@ -118,11 +117,11 @@ class BookingSystemTest {
     @DisplayName("throws exception when startTime is in the past")
     @Test
     void startTimeInPast() {
-        LocalDateTime pastStart = now.minusHours(3);
+        LocalDateTime pastStart = NOW.minusHours(3);
 
-        when(timeProvider.getCurrentTime()).thenReturn(now);
+        when(timeProvider.getCurrentTime()).thenReturn(NOW);
 
-        assertThatThrownBy(() -> bookingSystem.bookRoom(roomId, pastStart, end))
+        assertThatThrownBy(() -> bookingSystem.bookRoom(ROOM_ID, pastStart, END))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Kan inte boka tid i dåtid");
     }
@@ -130,12 +129,12 @@ class BookingSystemTest {
 
     @DisplayName("throws exception when endTime is before startTime")
     @Test
-    void endTimeBeforeStart() {
-        LocalDateTime earlyEnd = start.minusHours(1);
+    void endTimeBeforeStart_bookRoom() {
+        LocalDateTime earlyEnd = START.minusHours(1);
 
-        when(timeProvider.getCurrentTime()).thenReturn(now);
+        when(timeProvider.getCurrentTime()).thenReturn(NOW);
 
-        assertThatThrownBy(() -> bookingSystem.bookRoom(roomId, start, earlyEnd))
+        assertThatThrownBy(() -> bookingSystem.bookRoom(ROOM_ID, START, earlyEnd))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Sluttid måste vara efter starttid");
 
@@ -145,12 +144,12 @@ class BookingSystemTest {
     @DisplayName("room gets booked even if there is a notification failure")
     @Test
     void succeedWithNotificationFailure() throws NotificationException {
-        setUpMockRoom(true, roomId);
+        setUpMockRoomAvailability(true);
 
         doThrow(new NotificationException("Email service down"))
                 .when(notificationService).sendBookingConfirmation(any(Booking.class));
 
-        boolean result = bookingSystem.bookRoom(roomId, start, end);
+        boolean result = bookingSystem.bookRoom(ROOM_ID, START, END);
 
         assertThat(result).isTrue();
 
@@ -173,7 +172,7 @@ class BookingSystemTest {
     void bookingNotFound() {
         when(roomRepository.findAll()).thenReturn(Collections.emptyList());
 
-        boolean result = bookingSystem.cancelBooking(bookingId);
+        boolean result = bookingSystem.cancelBooking(BOOKING_ID);
 
         assertThat(result).isFalse();
         verify(roomRepository, never()).save(any());
@@ -183,19 +182,19 @@ class BookingSystemTest {
     @DisplayName("throws exception when booking startTime is already past current time")
     @Test
     void lateCancellation() {
-        LocalDateTime pastStart = now.minusHours(1);
+        LocalDateTime pastStart = NOW.minusHours(1);
 
         Booking mockBooking = mock(Booking.class);
         when(mockBooking.getStartTime()).thenReturn(pastStart);
 
         Room mockRoom = mock(Room.class);
-        when(mockRoom.hasBooking(bookingId)).thenReturn(true);
-        when(mockRoom.getBooking(bookingId)).thenReturn(mockBooking);
+        when(mockRoom.hasBooking(BOOKING_ID)).thenReturn(true);
+        when(mockRoom.getBooking(BOOKING_ID)).thenReturn(mockBooking);
 
-        when(timeProvider.getCurrentTime()).thenReturn(now);
+        when(timeProvider.getCurrentTime()).thenReturn(NOW);
         when(roomRepository.findAll()).thenReturn(List.of(mockRoom));
 
-        assertThatThrownBy(() -> bookingSystem.cancelBooking(bookingId))
+        assertThatThrownBy(() -> bookingSystem.cancelBooking(BOOKING_ID))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Kan inte avboka påbörjad eller avslutad bokning");
     }
@@ -204,22 +203,22 @@ class BookingSystemTest {
     @Test
     void succeedWithConfirmationFailure() throws NotificationException {
         Booking mockBooking = mock(Booking.class);
-        when(mockBooking.getStartTime()).thenReturn(start);
+        when(mockBooking.getStartTime()).thenReturn(START);
 
         Room mockRoom = mock(Room.class);
-        when(mockRoom.hasBooking(bookingId)).thenReturn(true);
-        when(mockRoom.getBooking(bookingId)).thenReturn(mockBooking);
+        when(mockRoom.hasBooking(BOOKING_ID)).thenReturn(true);
+        when(mockRoom.getBooking(BOOKING_ID)).thenReturn(mockBooking);
 
-        when(timeProvider.getCurrentTime()).thenReturn(now);
+        when(timeProvider.getCurrentTime()).thenReturn(NOW);
         when(roomRepository.findAll()).thenReturn(List.of(mockRoom));
 
         doThrow(new NotificationException("NotificationService is down"))
                 .when(notificationService).sendCancellationConfirmation(mockBooking);
 
-        boolean result = bookingSystem.cancelBooking(bookingId);
+        boolean result = bookingSystem.cancelBooking(BOOKING_ID);
 
         assertThat(result).isTrue();
-        verify(mockRoom).removeBooking(bookingId);
+        verify(mockRoom).removeBooking(BOOKING_ID);
         verify(roomRepository).save(mockRoom);
     }
 
@@ -227,37 +226,40 @@ class BookingSystemTest {
     @DisplayName("returns available rooms for given time period")
     @Test
     void returnsAvailableRooms() {
-        List<Room> mockRooms = Arrays.asList(
-                new Room("room-1", "Room 1"),
-                new Room("room-2", "Room 2"),
-                new Room("room-3", "Room 3")
-        );
+        Room room1 = mock(Room.class);
+        Room room2 = mock(Room.class);
+        Room room3 = mock(Room.class);
 
-        when(roomRepository.findAll()).thenReturn(mockRooms);
+        when(room1.isAvailable(START, END)).thenReturn(true);
+        when(room2.isAvailable(START, END)).thenReturn(true);
+        when(room3.isAvailable(START, END)).thenReturn(false);  // Mock one non available room
 
-        List<Room> result = bookingSystem.getAvailableRooms(start, end);
+        when(roomRepository.findAll()).thenReturn(Arrays.asList(room1, room2, room3));
+
+        List<Room> result = bookingSystem.getAvailableRooms(START, END);
 
         assertNotNull(result);
-        assertThat(result.size()).isEqualTo(3);
+        assertThat(result.size()).isEqualTo(2);
 
         verify(roomRepository).findAll();
     }
 
 
     @DisplayName("throws exception if any parameter is null")
-    @Test
-    void nullStartAndEndTime() {
-        assertThatThrownBy(() -> bookingSystem.getAvailableRooms(null, null))
+    @ParameterizedTest
+    @MethodSource("nullParameterProvider_getAvailableRooms")
+    void nullParameters_getAvailableRooms(LocalDateTime startTime, LocalDateTime endTime) {
+        assertThatThrownBy(() -> bookingSystem.getAvailableRooms(startTime, endTime))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Måste ange både start- och sluttid");
     }
 
     @DisplayName("throws exception if endTime is before startTime")
     @Test
-    void endTimeBeforeStartTime() {
-        LocalDateTime earlyEnd = start.minusHours(1);
+    void endTimeBeforeStart_getAvailableRooms() {
+        LocalDateTime earlyEnd = START.minusHours(1);
 
-        assertThatThrownBy(() -> bookingSystem.getAvailableRooms(start, earlyEnd))
+        assertThatThrownBy(() -> bookingSystem.getAvailableRooms(START, earlyEnd))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Sluttid måste vara efter starttid");
     }
