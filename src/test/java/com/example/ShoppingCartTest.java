@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ShoppingCartTest {
 
@@ -127,5 +128,15 @@ public class ShoppingCartTest {
 
         assertThat(cart.getItems()).hasSize(1);
         assertThat(cart.getItems().getFirst().getQuantity()).isEqualTo(2);
+    }
+
+    @DisplayName("throws exception if discount is not between 0 and 1")
+    @Test
+    void invalidDiscountPercentage() {
+        cart.addItem(new Item("item", BigDecimal.valueOf(100.0), 1));
+
+        assertThatThrownBy(() -> cart.addDiscount(new CartPercentageDiscount(BigDecimal.valueOf(1.1))))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Discount must be a percentage");
     }
 }
