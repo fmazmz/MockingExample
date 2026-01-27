@@ -44,6 +44,23 @@ public class PaymentProcessorTest {
         );
     }
 
+    private static Stream<Arguments> invalidAmountProvider() {
+        return Stream.of(
+                Arguments.of(EMAIL, BigDecimal.valueOf(-100)), // Negative amount
+                Arguments.of(EMAIL, BigDecimal.valueOf(-0.01)), // Negative decimal amount
+                Arguments.of(EMAIL, BigDecimal.valueOf(0)) // Zero
+        );
+    }
+
+    @DisplayName("throws exception if amount is negative or 0")
+    @ParameterizedTest
+    @MethodSource("invalidAmountProvider")
+    void invalidPaymentAmount(String email, BigDecimal amount) {
+        assertThatThrownBy(() -> paymentProcessor.processPayment(email, amount))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Amount must be positive");
+    }
+
     @DisplayName("throws exception if any paramater is null")
     @ParameterizedTest
     @MethodSource("nullParameterProvider")
@@ -104,5 +121,26 @@ public class PaymentProcessorTest {
         verify(paymentRepository).save(AMOUNT, PaymentStatus.SUCCESS.name());
         // Still verify that paymentProcessor tried to send the email
         verify(emailService).sendPaymentConfirmation(EMAIL, AMOUNT);
+    }
+
+    @DisplayName("throws exception if external payment service fails")
+    @Test
+    void externalServiceErrorThrows() throws NotificationException, ExternalServiceException {
+        when(paymentConfig.getApiKey()).thenReturn(API_KEY);
+
+        // mock an external payment service failure
+        when(paymentApi.charge(API_KEY, AMOUNT))
+                .thenThrow(ExternalServiceException.class);
+
+        // confirm ExternalServiceException is wrapped by domain PaymentException
+        assertThatThrownBy(() -> paymentProcessor.processPayment(EMAIL, AMOUNT))
+                .isInstanceOf(PaymentException.class)
+                .hasCauseInstanceOf(ExternalServiceException.class);
+
+        // Verify payment was saved in DB even if 3rd party service fails
+        verify(paymentRepository).save(AMOUNT, PaymentStatus.FAILED.name());
+
+        // No notification should be sent as payment was not successful
+        verify(emailService, never()).sendPaymentConfirmation(any(), any());
     }
 }
