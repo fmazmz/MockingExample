@@ -72,7 +72,7 @@ public class PaymentProcessorTest {
 
     @DisplayName("successfully processes payment and saves the payment to the database")
     @Test
-    void successfulPayment() throws PaymentException, NotificationException {
+    void successfulPayment() throws PaymentException, NotificationException, ExternalServiceException {
         PaymentApiResponse response = new PaymentApiResponse(true);
 
         when(paymentConfig.getApiKey()).thenReturn(API_KEY);
@@ -87,7 +87,7 @@ public class PaymentProcessorTest {
 
     @DisplayName("throws exception when charge fails and saves failed payment to database")
     @Test
-    void unsuccessfulPayment() throws NotificationException {
+    void unsuccessfulPayment() throws NotificationException, ExternalServiceException {
         PaymentApiResponse response = new PaymentApiResponse(false);
 
         when(paymentConfig.getApiKey()).thenReturn(API_KEY);
@@ -105,7 +105,7 @@ public class PaymentProcessorTest {
 
     @DisplayName("failed email confirmation should still return successful payment and save to database")
     @Test
-    void failedEmailConfirmation() throws PaymentException, NotificationException {
+    void failedEmailConfirmation() throws PaymentException, NotificationException, ExternalServiceException {
         PaymentApiResponse response = new PaymentApiResponse(true);
 
         when(paymentConfig.getApiKey()).thenReturn(API_KEY);
