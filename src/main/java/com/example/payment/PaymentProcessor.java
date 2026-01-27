@@ -26,8 +26,22 @@ public class PaymentProcessor {
             throw new IllegalArgumentException("Email and amount cannot be null");
         }
 
+        if (amount.compareTo(BigDecimal.ZERO) <= 0)  {
+            throw new IllegalArgumentException("Amount must be positive");
+        }
+
         // Anropar extern betaltjänst
-        PaymentApiResponse response = paymentApi.charge(paymentConfig.getApiKey(), amount);
+        PaymentApiResponse response;
+
+        try {
+            response = paymentApi.charge(paymentConfig.getApiKey(), amount);
+        } catch (ExternalServiceException e) {
+            // If external service fails, we want to ideally save the payment still
+            // so that we can implement internal retry functions without having the customer
+            // go through the process one more time
+            paymentRepository.save(amount, PaymentStatus.FAILED.name());
+            throw new PaymentException("External payment service error: ", e);
+        }
 
         // save both failed and successful payments for audit
         if (!response.success()) {
